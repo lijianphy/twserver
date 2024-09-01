@@ -22,7 +22,7 @@ This is a simple Java-based HTTP server designed to host and serve TiddlyWiki5 w
 
 2. **Clone the repository:**
    ```
-   git clone https://github.com/your-username/tiddlywiki-server.git 
+   git clone https://github.com/lijianphy/twserver.git
    ```
 
 3. **Configuration:**
@@ -38,13 +38,13 @@ This is a simple Java-based HTTP server designed to host and serve TiddlyWiki5 w
 4. **Compilation:**
     - Compile the Java code using maven:
       ```
-      maven package
+      mvn clean package
       ```
 
 5. **Running the server:**
     - Run the server using the following command:
       ```
-      java -jar /path/to/twserver-1.0-SNAPSHOT.jar /path/to/config.properties
+      java -jar target/twserver-1.0.jar config.properties
       ```
 
 ## Usage
@@ -59,4 +59,4 @@ Contributions are welcome! Please feel free to open issues or submit pull reques
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
