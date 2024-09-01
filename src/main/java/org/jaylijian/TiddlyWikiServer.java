@@ -21,15 +21,26 @@ import java.util.logging.*;
 import java.util.zip.GZIPOutputStream;
 
 
+/**
+ * The {@code TiddlyWikiServer} class implements a simple HTTP server that serves
+ * static files from a specified directory and supports PUT requests for updating
+ * TiddlyWiki HTML files (including gzipped .html.gz files).
+ * It also provides basic directory listing and automatic backups of modified files.
+ */
 public final class TiddlyWikiServer {
 
+    /**
+     * Main method to start the TiddlyWiki server.
+     *
+     * @param args Command line arguments. The first argument should be the path to the configuration file.
+     */
     public static void main(String[] args) {
         if (args.length == 0) {
             printUsage();
             return;
         }
         String configFilePath = args[0];
-        var server = fromConfigFile(configFilePath);
+        TiddlyWikiServer server = fromConfigFile(configFilePath);
         server.start();
     }
 
@@ -38,6 +49,14 @@ public final class TiddlyWikiServer {
     private final Path backupPath;
     private final Logger logger;
 
+    /**
+     * Constructs a new {@code TiddlyWikiServer} instance.
+     *
+     * @param address The IP address or hostname to bind the server to.
+     * @param port    The port number to listen on.
+     * @param root    The root directory for serving TiddlyWiki files.
+     * @param backup  The subdirectory within the root directory for storing backups.
+     */
     public TiddlyWikiServer(String address,
                             int port,
                             String root,
@@ -49,6 +68,12 @@ public final class TiddlyWikiServer {
         setupLogger();
     }
 
+    /**
+     * Creates a {@code TiddlyWikiServer} instance from a configuration file.
+     *
+     * @param configFilePath The path to the configuration file.
+     * @return A new {@code TiddlyWikiServer} instance configured with settings from the file.
+     */
     private static TiddlyWikiServer fromConfigFile(String configFilePath) {
         Properties config = new Properties();
         try (FileReader reader = new FileReader(configFilePath)) {
@@ -66,10 +91,16 @@ public final class TiddlyWikiServer {
         return new TiddlyWikiServer(address, port, root, backup);
     }
 
+    /**
+     * Prints the usage instructions for the server.
+     */
     private static void printUsage() {
         System.out.println("Usage: java TiddlyWikiServer <config_file_path>");
     }
 
+    /**
+     * Starts the HTTP server and listens for incoming requests.
+     */
     public void start() {
         try {
             HttpServer server = HttpServer.create(serverAddress, 10);
@@ -102,6 +133,11 @@ public final class TiddlyWikiServer {
         }));
     }
 
+    /**
+     * Sets up the logger for the server.
+     * Configures a console handler and a file handler to log messages to both
+     * the console and a log file.
+     */
     private void setupLogger() {
         try {
             // Custom format for log messages
@@ -149,7 +185,17 @@ public final class TiddlyWikiServer {
         }
     }
 
+    /**
+     * The {@code TWiki5Handler} class handles incoming HTTP requests for the TiddlyWiki server.
+     * It supports GET, HEAD, PUT, and OPTIONS methods and provides basic directory listing.
+     */
     private class TWiki5Handler implements HttpHandler {
+
+        /**
+         * Handles incoming HTTP requests.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         */
         @Override
         public void handle(HttpExchange exchange) {
             String method = exchange.getRequestMethod();
@@ -185,6 +231,12 @@ public final class TiddlyWikiServer {
             }
         }
 
+        /**
+         * Handles favicon.ico requests.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         * @throws IOException If an I/O error occurs while handling the request.
+         */
         private void handleFaviconRequest(HttpExchange exchange) throws IOException {
             Path faviconPath = root.resolve("favicon.ico");
             if (Files.exists(faviconPath)) {
@@ -202,16 +254,34 @@ public final class TiddlyWikiServer {
             logger.info("Favicon request handled");
         }
 
+        /**
+         * Handles GET requests by serving the requested file or directory listing.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         * @throws IOException If an I/O error occurs while handling the request.
+         */
         private void handleGetRequest(HttpExchange exchange) throws IOException {
             serveStaticFile(exchange, false);
             logger.info("Handled GET request successfully.");
         }
 
+        /**
+         * Handles HEAD requests by sending only the headers without the file content.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         * @throws IOException If an I/O error occurs while handling the request.
+         */
         private void handleHeadRequest(HttpExchange exchange) throws IOException {
             serveStaticFile(exchange, true);
             logger.info("Handled HEAD request successfully.");
         }
 
+        /**
+         * Handles PUT requests by updating the requested file and creating a backup.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         * @throws IOException If an I/O error occurs while handling the request.
+         */
         private void handlePutRequest(HttpExchange exchange) throws IOException {
             Path localFile = translatePath(exchange.getRequestURI().getPath());
             boolean isGzippedHtml = localFile.getFileName().toString().endsWith(".html.gz");
@@ -247,16 +317,29 @@ public final class TiddlyWikiServer {
             backupFile(localFile);
         }
 
+        /**
+         * Handles OPTIONS requests by sending allowed methods, especially the DAV method.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         * @throws IOException If an I/O error occurs while handling the request.
+         */
         private void handleOptionsRequest(HttpExchange exchange) throws IOException {
             Headers headers = exchange.getResponseHeaders();
             headers.add("dav", "tw5/put");
             headers.add("allow", "GET,HEAD,POST,OPTIONS,CONNECT,PUT,DAV,dav");
             headers.add("x-api-access-type", "file");
-            exchange.sendResponseHeaders(200, 0); // OK
+            exchange.sendResponseHeaders(200, -1); // OK
             exchange.getResponseBody().close();
             logger.info("Handled OPTIONS request successfully.");
         }
 
+        /**
+         * Serves a static file or directory listing based on the request path.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         * @param headOnly {@code true} to send only headers, {@code false} to send headers and content.
+         * @throws IOException If an I/O error occurs while handling the request.
+         */
         private void serveStaticFile(HttpExchange exchange, boolean headOnly) throws IOException {
             String requestPath = exchange.getRequestURI().getPath();
             Path localFile = translatePath(requestPath);
@@ -274,6 +357,14 @@ public final class TiddlyWikiServer {
             }
         }
 
+        /**
+         * Sends a static file to the client, optionally gzipping it if it's an HTML file lager than 100KB.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         * @param localFile The path to the local file to send.
+         * @param headOnly {@code true} to send only headers, {@code false} to send headers and content.
+         * @throws IOException If an I/O error occurs while handling the request.
+         */
         private void sendStaticFile(HttpExchange exchange, Path localFile, boolean headOnly) throws IOException {
             Headers headers = exchange.getResponseHeaders();
 
@@ -319,6 +410,13 @@ public final class TiddlyWikiServer {
             }
         }
 
+        /**
+         * Transfers data from an input stream to an output stream using a buffer.
+         *
+         * @param input  The input stream to read from.
+         * @param output The output stream to write to.
+         * @throws IOException If an I/O error occurs during the transfer.
+         */
         private static void bufferedTransfer(InputStream input, OutputStream output) throws IOException {
             final int BUFFER_SIZE = 8192; // 8KB buffer
             byte[] buffer = new byte[BUFFER_SIZE];
@@ -329,6 +427,14 @@ public final class TiddlyWikiServer {
             }
         }
 
+        /**
+         * Sends an HTML directory listing to the client.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         * @param localFile The path to the local directory to list.
+         * @param headOnly {@code true} to send only headers, {@code false} to send headers and content.
+         * @throws IOException If an I/O error occurs while handling the request.
+         */
         private void sendDirectoryListing(HttpExchange exchange, Path localFile, boolean headOnly) throws IOException {
             Headers headers = exchange.getResponseHeaders();
             headers.add("Content-Type", "text/html; charset=UTF-8");
@@ -348,6 +454,14 @@ public final class TiddlyWikiServer {
             }
         }
 
+        /**
+         * Formats an HTML directory listing for the given directory.
+         *
+         * @param exchange The {@code HttpExchange} object representing the request and response.
+         * @param localFile The path to the local directory to list.
+         * @return The HTML content of the directory listing.
+         * @throws IOException If an I/O error occurs while reading the directory.
+         */
         private String formatDirectoryListing(HttpExchange exchange, Path localFile) throws IOException {
             String requestPath = exchange.getRequestURI().getPath();
             Path relativePath = root.relativize(localFile.toAbsolutePath());
@@ -417,18 +531,37 @@ public final class TiddlyWikiServer {
             return content.toString();
         }
 
+        /**
+         * Formats a file size in human-readable format (e.g., 1.2 KB, 3.5 MB).
+         *
+         * @param size The file size in bytes.
+         * @return The formatted file size string.
+         */
         private static String formatFileSize(long size) {
             if (size < 1024) return size + " B";
             int z = (63 - Long.numberOfLeadingZeros(size)) / 10;
             return String.format("%.1f %sB", (double) size / (1L << (z * 10)), " KMGTPE".charAt(z));
         }
 
+        /**
+         * Formats a last modified timestamp in a human-readable format.
+         *
+         * @param lastModified The last modified timestamp as an {@code Instant}.
+         * @return The formatted last modified string.
+         */
         private static String formatLastModified(Instant lastModified) {
             return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                     .withZone(ZoneId.systemDefault())
                     .format(lastModified);
         }
 
+        /**
+         * Creates a backup of the given file in the backup directory.
+         * The backup file name includes a timestamp to differentiate between backups.
+         *
+         * @param origFile The path to the original file to back up.
+         * @throws IOException If an I/O error occurs while creating the backup.
+         */
         private void backupFile(Path origFile) throws IOException {
             // assume file name ends with ".html or .html.gz"
             String backupFileName = formatBackupFileName(origFile.getFileName().toString());
@@ -451,6 +584,12 @@ public final class TiddlyWikiServer {
             logger.info("Backup to: " + backupFile);
         }
 
+        /**
+         * Translates a request path to a local file path relative to the server's root directory.
+         *
+         * @param path The request path.
+         * @return The corresponding local file path.
+         */
         private Path translatePath(String path) {
             if (!path.startsWith("/")) {
                 throw new IllegalArgumentException("Path must start with '/'");
@@ -459,6 +598,12 @@ public final class TiddlyWikiServer {
         }
     }
 
+    /**
+     * Formats a backup file name by appending a timestamp to the original file name.
+     *
+     * @param originalFileName The original file name.
+     * @return The formatted backup file name.
+     */
     private static String formatBackupFileName(String originalFileName) {
         int lastIndex = originalFileName.lastIndexOf(".html");
         if (lastIndex == -1) {
@@ -468,10 +613,23 @@ public final class TiddlyWikiServer {
         return String.format("%s-%s.html.gz", baseName, timeNow());
     }
 
+    /**
+     * Returns the current date and time formatted as "yyyyMMddHHmmss".
+     *
+     * @return The formatted current date and time string.
+     */
     private static String timeNow() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
     }
 
+    /**
+     * Cleans up old backup files in the backup directory.
+     * Keeps at most one backup per month for previous months and all backups for the current month.
+     *
+     * @param backupDir The path to the backup directory.
+     * @return The number of backup files cleaned up.
+     * @throws IOException If an I/O error occurs while cleaning up backups.
+     */
     private static int cleanBackup(Path backupDir) throws IOException {
         String currentYearMonth = timeNow().substring(0, 6);
 
