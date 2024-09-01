@@ -38,11 +38,11 @@ public final class TiddlyWikiServer {
     private final Path backupPath;
     private final Logger logger;
 
-    public TiddlyWikiServer(String addr,
+    public TiddlyWikiServer(String address,
                             int port,
                             String root,
                             String backup) {
-        serverAddress = new InetSocketAddress(addr, port);
+        serverAddress = new InetSocketAddress(address, port);
         this.root = Path.of(root).toAbsolutePath();
         this.backupPath = this.root.resolve(backup).toAbsolutePath();
         logger = Logger.getLogger(TiddlyWikiServer.class.getName());
@@ -58,12 +58,12 @@ public final class TiddlyWikiServer {
             System.exit(1);
         }
 
-        String addr = config.getProperty("server.address", "localhost");
+        String address = config.getProperty("server.address", "localhost");
         int port = Integer.parseInt(config.getProperty("server.port", "8080"));
         String root = config.getProperty("tiddlywiki.root", System.getProperty("user.dir"));
         String backup = config.getProperty("tiddlywiki.backup", "backup");
 
-        return new TiddlyWikiServer(addr, port, root, backup);
+        return new TiddlyWikiServer(address, port, root, backup);
     }
 
     private static void printUsage() {
