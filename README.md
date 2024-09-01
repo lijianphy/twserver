@@ -26,7 +26,7 @@ This is a simple Java-based HTTP server designed to host and serve TiddlyWiki5 w
    ```
 
 3. **Configuration:**
-    - Create a configuration file named `config.properties` in the root directory of the project.
+    - Create (or modify) the configuration file named `config.properties` in the root directory of the project.
     - Customize the following properties in the `config.properties` file:
       ```
       server.address=localhost  # IP address or hostname to bind the server to
