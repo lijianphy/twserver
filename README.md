@@ -1,6 +1,6 @@
 # TiddlyWiki Server
 
-This is a simple Java-based HTTP server designed to host and serve TiddlyWiki5 wikis. It supports basic functionalities like serving static files, handling PUT requests for updating wiki content, backing up modified wikis, and generating directory listings.
+This is a simple Java-based HTTP server designed to host and serve TiddlyWiki5 wikis, inspired by [tw5server.nim](https://github.com/hffqyd/tw5-server).
 
 ## Features
 
