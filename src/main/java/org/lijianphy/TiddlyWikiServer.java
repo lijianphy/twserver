@@ -388,6 +388,8 @@ public final class TiddlyWikiServer {
             boolean useGzip = isGzippedHtml || (isHtml && fileSize > 100 * 1024); // 100KB
             if (useGzip) {
                 headers.add("Content-Encoding", "gzip");
+            } else {
+                headers.add("Content-Length", String.valueOf(fileSize));
             }
 
             if (headOnly) {
@@ -418,7 +420,7 @@ public final class TiddlyWikiServer {
          * @throws IOException If an I/O error occurs during the transfer.
          */
         private static void bufferedTransfer(InputStream input, OutputStream output) throws IOException {
-            final int BUFFER_SIZE = 8192; // 8KB buffer
+            final int BUFFER_SIZE = 1024 * 100; // 100KB buffer
             byte[] buffer = new byte[BUFFER_SIZE];
             int bytesRead;
             while ((bytesRead = input.read(buffer)) != -1) {
