@@ -29,10 +29,17 @@ This is a simple Java-based HTTP server designed to host and serve TiddlyWiki5 w
     - Create (or modify) the configuration file named `config.properties` in the root directory of the project.
     - Customize the following properties in the `config.properties` file:
       ```
-      server.address=localhost  # IP address or hostname to bind the server to
-      server.port=8080          # Port number to listen on
-      tiddlywiki.root=/path/to/your/tiddlywiki  # Root directory for serving TiddlyWiki files
-      tiddlywiki.backup=backup   # Subdirectory within the root directory for storing backups
+      # IP address or hostname to bind the server to
+      server.address=localhost
+
+      # Port number to listen on
+      server.port=8080
+
+      # Root directory for serving TiddlyWiki files
+      tiddlywiki.root=/path/to/your/tiddlywiki
+
+      # Subdirectory within the root directory for storing backups
+      tiddlywiki.backup=backup
       ```
 
 4. **Compilation:**
